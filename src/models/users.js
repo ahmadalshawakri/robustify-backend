@@ -1,5 +1,3 @@
-const { hashPassword } = require("../services/hash.service");
-
 module.exports = (sequelize, DataTypes) => {
   const User = sequelize.define("Users", {
     // Define your model attributes here
