@@ -6,6 +6,7 @@ const cors = require("cors");
 const AuthRoutes = require("./routes/auth.route");
 const AdminRoutes = require("./routes/admin.route");
 const OrderRoutes = require("./routes/order.route");
+const PurchaseRoutes = require("./routes/purchase.route");
 
 const app = express();
 
@@ -22,6 +23,7 @@ app.get("/health", (req, res) => {
 app.use("/api/auth", AuthRoutes);
 app.use("/api/admin/users", AdminRoutes);
 app.use("/api/orders", OrderRoutes);
+app.use("/api/purchases", PurchaseRoutes);
 
 // Sync database models
 require("./models");

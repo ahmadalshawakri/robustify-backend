@@ -1,7 +1,14 @@
 module.exports = (sequelize, DataTypes) => {
   const Purchase = sequelize.define("Purchases", {
-    // Item will be associated with an Item table/model
+    item: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
     quantity: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+    },
+    cost: {
       type: DataTypes.INTEGER,
       allowNull: false,
     },
@@ -11,14 +18,16 @@ module.exports = (sequelize, DataTypes) => {
     },
     bookingDate: {
       type: DataTypes.DATE,
+      allowNull: true,
     },
     arrivalDate: {
       type: DataTypes.DATE,
+      allowNull: false,
     },
     status: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.ENUM("Booked", "Canceled", "Partial", "Arrived"),
+      allowNull: true,
     },
-    // SupplierId will be set up via associations
   });
 
   return Purchase;
