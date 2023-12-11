@@ -20,7 +20,7 @@ exports.register = async (req, res) => {
     res.status(201).json(`${role} Registered Successfully`);
   } catch (err) {
     console.error(err.message);
-    res.status(500).send("Somthing Went Wrong, Please Check your Inputs");
+    res.status(500).send("Something Went Wrong, Please Check your Inputs");
   }
 };
 

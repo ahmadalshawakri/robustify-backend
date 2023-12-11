@@ -5,7 +5,7 @@ const authAdmin = require("../middleware/jwt");
 
 const router = express.Router();
 
-router.post("/", [validateUser, authAdmin], adminController.register);
+router.post("/", [authAdmin, validateUser], adminController.register);
 router.get("/", authAdmin, adminController.list);
 router.delete("/:id", authAdmin, adminController.delete);
 // router.put("/:id", validateUser, adminController.register);
