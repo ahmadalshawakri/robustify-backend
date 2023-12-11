@@ -1,5 +1,3 @@
-// src/utils/calculateUtilization.js
-
 const orders = require("../models/orders");
 
 const WORKDAY_MINUTES = 480;
@@ -9,7 +7,6 @@ const calculateUtilization = (
   numberOfOrders,
   materialConsumption
 ) => {
-  // Utilization calculation based on the department
   const departmentUtilizationMap = {
     Design: (orders) => (orders * 180) / WORKDAY_MINUTES,
     Montage: (orders) => (orders * 20) / WORKDAY_MINUTES,
@@ -20,7 +17,6 @@ const calculateUtilization = (
     Delivery: (orders) => (orders * 40) / WORKDAY_MINUTES,
   };
 
-  // Call the appropriate calculation based on the department
   const utilizationFunction = departmentUtilizationMap[department];
   return utilizationFunction
     ? utilizationFunction(numberOfOrders, materialConsumption)

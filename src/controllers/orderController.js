@@ -1,4 +1,5 @@
-const { Orders, Contacts } = require("../models");
+const { Orders, Contacts, Utilizations, Users } = require("../models");
+const calculateUtilization = require("../services/calculateUtilization.service");
 
 exports.create = async (req, res) => {
   const {
@@ -37,6 +38,32 @@ exports.create = async (req, res) => {
       customerId: contact.id,
       status: "Not Started",
     });
+
+    if (assignToId) {
+      const assignedUser = await Users.findByPk(assignToId);
+      if (assignedUser) {
+        const numberOfOrders = await Orders.count({
+          where: { assignToId: assignedUser.id },
+        });
+
+        const totalMaterialConsumption = await Orders.sum("consumption", {
+          where: { assignToId: assignedUser.id },
+        });
+
+        const newUtilizationRate = calculateUtilization(
+          assignedUser.department,
+          numberOfOrders,
+          totalMaterialConsumption
+        );
+
+        // Update or create the utilization record
+        await Utilizations.upsert({
+          userId: assignedUser.id,
+          utilizationRate: newUtilizationRate,
+          timestamp: new Date(),
+        });
+      }
+    }
     return res.status(201).json(order);
   } catch (error) {
     return res.status(500).json(error.message);

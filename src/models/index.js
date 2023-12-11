@@ -7,6 +7,7 @@ const ContactsModel = require("./contacts");
 const InventoriesModel = require("./inventories");
 const InvoicesModel = require("./invoices");
 const ComplaintsModel = require("./complaintes");
+const UtilizationModel = require("./utilization");
 
 const sequelize = new Sequelize(
   config.database,
@@ -26,6 +27,7 @@ const Contacts = ContactsModel(sequelize, Sequelize.DataTypes);
 const Inventories = InventoriesModel(sequelize, Sequelize.DataTypes);
 const Invoices = InvoicesModel(sequelize, Sequelize.DataTypes);
 const Complaintes = ComplaintsModel(sequelize, Sequelize.DataTypes);
+const Utilizations = UtilizationModel(sequelize, Sequelize.DataTypes);
 
 function setupAssociations(sequelize) {
   const {
@@ -36,6 +38,7 @@ function setupAssociations(sequelize) {
     Inventories,
     Complaints,
     Invoices,
+    Utilizations,
   } = sequelize.models;
 
   // Define associations here
@@ -43,6 +46,7 @@ function setupAssociations(sequelize) {
     as: "AssignedOrders",
     foreignKey: "assignToId",
   });
+
   Contacts.hasMany(Orders, {
     as: "CustomerOrders",
     foreignKey: "customerId",
@@ -51,6 +55,7 @@ function setupAssociations(sequelize) {
     as: "SupplierPurchases",
     foreignKey: "supplierId",
   });
+
   Orders.belongsTo(Users, {
     as: "AssignedTo",
     foreignKey: "assignToId",
@@ -60,10 +65,12 @@ function setupAssociations(sequelize) {
     foreignKey: "customerId",
   });
   Orders.hasOne(Invoices, { foreignKey: "orderId" });
+
   Purchases.belongsTo(Contacts, {
     as: "Supplier",
     foreignKey: "supplierId",
   });
+
   Complaintes.belongsTo(Orders, { foreignKey: "orderId" });
   Complaintes.belongsTo(Contacts, {
     as: "Customer",
@@ -73,7 +80,11 @@ function setupAssociations(sequelize) {
     as: "Responsibility",
     foreignKey: "responsibilityId",
   });
+
   Invoices.belongsTo(Orders, { foreignKey: "orderId" });
+
+  Users.hasMany(Utilizations, { foreignKey: "userId" });
+  Utilizations.belongsTo(Users, { foreignKey: "userId" });
 }
 
 setupAssociations(sequelize);
@@ -93,4 +104,5 @@ module.exports = {
   Inventories,
   Invoices,
   Complaintes,
+  Utilizations,
 };
