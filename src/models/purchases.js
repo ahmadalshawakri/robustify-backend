@@ -1,7 +1,7 @@
 module.exports = (sequelize, DataTypes) => {
   const Purchase = sequelize.define("Purchases", {
     item: {
-      type: DataTypes.STRING,
+      type: DataTypes.JSON,
       allowNull: false,
     },
     quantity: {
