@@ -7,6 +7,7 @@ const AuthRoutes = require("./routes/auth.route");
 const AdminRoutes = require("./routes/admin.route");
 const OrderRoutes = require("./routes/order.route");
 const PurchaseRoutes = require("./routes/purchase.route");
+const ChartsRoutes = require("./routes/charts.route");
 
 const app = express();
 
@@ -24,6 +25,7 @@ app.use("/api/auth", AuthRoutes);
 app.use("/api/admin/users", AdminRoutes);
 app.use("/api/orders", OrderRoutes);
 app.use("/api/purchases", PurchaseRoutes);
+app.use("/api/charts", ChartsRoutes);
 
 // Sync database models
 require("./models");

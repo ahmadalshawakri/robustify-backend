@@ -31,7 +31,7 @@ module.exports = (sequelize, DataTypes) => {
     status: {
       type: DataTypes.ENUM(
         "Not Started",
-        "Desgin",
+        "Design",
         "Montage",
         "Printing",
         "Cutting",
