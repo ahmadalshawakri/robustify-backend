@@ -8,13 +8,13 @@ const calculateUtilization = (
   materialConsumption
 ) => {
   const departmentUtilizationMap = {
-    Design: (orders) => (orders * 180) / WORKDAY_MINUTES,
-    Montage: (orders) => (orders * 20) / WORKDAY_MINUTES,
+    Design: (orders) => ((orders * 180) / WORKDAY_MINUTES) * 100,
+    Montage: (orders) => ((orders * 20) / WORKDAY_MINUTES) * 100,
     Printing: (orders, materialConsumption) =>
-      (orders * 9.6 * materialConsumption) / WORKDAY_MINUTES,
+      ((orders * 9.6 * materialConsumption) / WORKDAY_MINUTES) * 100,
     Cutting: (orders, materialConsumption) =>
-      (orders * 100 * materialConsumption) / WORKDAY_MINUTES,
-    Delivery: (orders) => (orders * 40) / WORKDAY_MINUTES,
+      ((orders * 100 * materialConsumption) / WORKDAY_MINUTES) * 100,
+    Delivery: (orders) => ((orders * 40) / WORKDAY_MINUTES) * 100,
   };
 
   const utilizationFunction = departmentUtilizationMap[department];

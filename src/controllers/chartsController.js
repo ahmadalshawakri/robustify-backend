@@ -1,4 +1,4 @@
-const { Orders, sequelize } = require("../models");
+const { Orders, Users, sequelize, Utilizations } = require("../models");
 
 exports.ordersHistogram = async (req, res) => {
   try {
@@ -34,4 +34,22 @@ exports.ordersHistogram = async (req, res) => {
   }
 };
 
-exports.averageUtil = async (req, res) => {};
+exports.averageUtil = async (req, res) => {
+  try {
+    const employeesCount = await Users.findAll({
+      attributes: [
+        [sequelize.fn("COUNT", sequelize.col("id")), "employeesCount"],
+      ],
+      where: { role: "Employee" },
+      raw: true,
+    });
+
+    const utilizationSum = await Utilizations.sum("utilizationRate");
+
+    const avg = utilizationSum / employeesCount[0].employeesCount;
+
+    return res.status(200).json(avg.toFixed(1));
+  } catch (error) {
+    return res.status(500).json(error.message);
+  }
+};

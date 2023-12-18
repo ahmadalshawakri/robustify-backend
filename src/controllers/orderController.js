@@ -120,11 +120,19 @@ exports.update = async (req, res) => {
       return res.status(404).send("Order not found");
     }
 
-    // Update specific fields
+    const previousAssigneeId = order.assignToId;
+
     order.assignToId = assignToId;
     order.status = status;
 
     await order.save();
+
+    if (assignToId && assignToId !== previousAssigneeId) {
+      await updateUtilizationForUser(assignToId);
+      if (previousAssigneeId) {
+        await updateUtilizationForUser(previousAssigneeId);
+      }
+    }
 
     res.status(200).json(order);
   } catch (error) {
@@ -148,4 +156,27 @@ exports.delete = async (req, res) => {
   } catch (error) {
     res.status(500).send(error.message);
   }
+};
+
+const updateUtilizationForUser = async (userId) => {
+  const numberOfOrders = await Orders.count({
+    where: { assignToId: userId },
+  });
+
+  const totalMaterialConsumption = await Orders.sum("consumption", {
+    where: { assignToId: userId },
+  });
+
+  const assignedUser = await Users.findByPk(userId);
+  const newUtilizationRate = calculateUtilization(
+    assignedUser.department,
+    numberOfOrders,
+    totalMaterialConsumption
+  );
+
+  await Utilizations.upsert({
+    userId: userId,
+    utilizationRate: newUtilizationRate,
+    timestamp: new Date(),
+  });
 };
