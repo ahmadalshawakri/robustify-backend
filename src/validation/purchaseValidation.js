@@ -13,10 +13,13 @@ const newPurchaseSchema = Joi.object({
     email: Joi.string().email().required(),
   }).required(),
   item: Joi.object({
-    name: Joi.string()
+    itemName: Joi.string()
       .valid(...validItems.map((item) => item.name))
       .required(),
-    size: Joi.number().valid(...validItems.map((item) => item.size)),
+    itemSize: Joi.number()
+      .valid(...validItems.map((item) => item.size))
+      .required(),
+    itemType: Joi.string(),
   }),
   quantity: Joi.number().required(),
   purchaseDate: Joi.date().required(),
