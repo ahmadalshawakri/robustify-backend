@@ -39,6 +39,7 @@ exports.create = async (req, res) => {
       cost,
       arrivalDate,
       supplierId: contact.id,
+      status: "Upcoming",
     });
 
     return res.status(201).json(purchase);
