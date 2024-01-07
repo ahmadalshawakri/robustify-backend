@@ -8,6 +8,7 @@ const InventoriesModel = require("./inventories");
 const InvoicesModel = require("./invoices");
 const ComplaintsModel = require("./complaintes");
 const UtilizationModel = require("./utilization");
+const { hashPassword } = require("../services/hash.service");
 
 const sequelize = new Sequelize(
   config.database,
@@ -91,8 +92,25 @@ setupAssociations(sequelize);
 
 sequelize
   .sync({ force: false }) // Change to true to drop tables first
-  .then(() => {
+  .then(async () => {
     console.log("Database & tables created!");
+
+    const password = await hashPassword("123456789");
+    const [user, created] = await Users.findOrCreate({
+      where: { id: 1 },
+      defaults: {
+        username: "super.admin",
+        email: "super.admin",
+        password,
+        role: "Admin",
+        department: "Administration",
+      },
+    });
+    if (!created) {
+      console.log("User already exists");
+    } else {
+      console.log("User created");
+    }
   });
 
 module.exports = {

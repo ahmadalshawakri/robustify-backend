@@ -21,6 +21,7 @@ module.exports = (sequelize, DataTypes) => {
     },
     department: {
       type: DataTypes.ENUM(
+        "Administration",
         "Design",
         "Montage",
         "Printing",

@@ -21,7 +21,14 @@ const userSchema = Joi.object({
   password: Joi.string().required(),
   role: Joi.string().valid("Admin", "Employee").required(),
   department: Joi.string()
-    .valid("Design", "Montage", "Printing", "Cutting", "Delivery")
+    .valid(
+      "Administration",
+      "Design",
+      "Montage",
+      "Printing",
+      "Cutting",
+      "Delivery"
+    )
     .required(),
 });
 

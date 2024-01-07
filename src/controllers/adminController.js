@@ -9,8 +9,8 @@ exports.register = async (req, res) => {
     const hashedPassword = await hashPassword(password);
 
     const newUser = await Users.create({
-      username,
-      email,
+      username: username.toLowerCase(),
+      email: email.toLowerCase(),
       password: hashedPassword,
       role,
       department,

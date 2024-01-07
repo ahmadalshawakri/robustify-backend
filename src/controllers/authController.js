@@ -5,7 +5,9 @@ const { generateToken } = require("../services/jwt.service");
 exports.login = async (req, res) => {
   try {
     const { username, password } = req.body;
-    const user = await Users.findOne({ where: { username } });
+    const user = await Users.findOne({
+      where: { username: username.toLowerCase() },
+    });
 
     if (!user) {
       return res.status(400).json({ msg: "Invalid Credentials" });
