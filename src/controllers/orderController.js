@@ -116,9 +116,7 @@ exports.update = async (req, res) => {
   try {
     const order = await Orders.findByPk(orderId);
 
-    if (!order) {
-      return res.status(404).send("Order not found");
-    }
+    if (!order) return res.status(404).json("Order not found");
 
     const previousAssigneeId = order.assignToId;
 
@@ -134,9 +132,9 @@ exports.update = async (req, res) => {
       }
     }
 
-    res.status(200).json(order);
+    return res.status(200).json(order);
   } catch (error) {
-    res.status(500).send(error.message);
+    return res.status(500).send(error.message);
   }
 };
 

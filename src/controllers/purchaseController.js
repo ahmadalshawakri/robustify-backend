@@ -1,16 +1,31 @@
 const { Purchases, Contacts } = require("../models");
 
 exports.list = async (req, res) => {
+  const { status } = req.query;
+  let purchases;
   try {
-    const purchases = await Purchases.findAll({
-      include: [
-        {
-          model: Contacts,
-          as: "Supplier",
-          attributes: ["name", "phone"],
-        },
-      ],
-    });
+    if (status) {
+      purchases = await Purchases.findAll({
+        include: [
+          {
+            model: Contacts,
+            as: "Supplier",
+            attributes: ["name", "phone"],
+          },
+        ],
+        where: { status },
+      });
+    } else {
+      purchases = await Purchases.findAll({
+        include: [
+          {
+            model: Contacts,
+            as: "Supplier",
+            attributes: ["name", "phone"],
+          },
+        ],
+      });
+    }
     return res.status(200).json({ purchases });
   } catch (error) {
     return res.status(500).json(error.message);
@@ -67,7 +82,26 @@ exports.getById = async (req, res) => {
     return res.status(500).json(error.message);
   }
 };
-exports.update = async (req, res) => {};
+exports.update = async (req, res) => {
+  const purchaseId = req.params.id;
+  const { quantity, status } = req.body;
+
+  try {
+    const purchase = await Purchases.findByPk(purchaseId);
+
+    if (!purchase) return res.status(404).json("Purchase not found");
+
+    purchase.quantity = quantity;
+    purchase.status = status;
+
+    await purchase.save();
+
+    return res.status(201).json(purchase);
+  } catch (error) {
+    return res.status(500).send(error.message);
+  }
+};
+
 exports.delete = async (req, res) => {
   const purchaseId = req.params.id;
   try {

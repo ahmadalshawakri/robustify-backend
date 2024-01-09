@@ -1,6 +1,9 @@
 module.exports = (sequelize, DataTypes) => {
   const Inventory = sequelize.define("Inventories", {
-    // ItemId will be set up via associations
+    item: {
+      type: DataTypes.JSON,
+      allowNull: false,
+    },
     quantity: {
       type: DataTypes.INTEGER,
       allowNull: false,
