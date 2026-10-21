@@ -5,8 +5,7 @@ printing, cutting, packaging, delivery), each stage owned by its department. Mat
 from purchase to stock to press, and managers see utilization, the order queue, quality costs and
 invoices in one place.
 
-> **Status:** being rebuilt. Phase 1 (this foundation) is in place; the API modules and the new UI
-> follow. The original 2023 JavaScript version lives in this repository's history and in
+> **Status:** being rebuilt. The foundation and the API are in place; the new UI follows. The original 2023 JavaScript version lives in this repository's history and in
 > [Robustify-Frontend](https://github.com/ahmadalshawakri/Robustify-Frontend).
 
 ## Stack
@@ -48,6 +47,44 @@ Demo accounts follow `firstname.lastname`: `layla.mansour` is the admin; `omar.h
 | `pnpm db:migrate`                | Create a migration from schema changes (dev) |
 | `pnpm db:deploy`                 | Apply migrations (production)                |
 | `pnpm db:seed` / `pnpm db:reset` | Reload demo data / drop, migrate and reseed  |
+
+## API
+
+All endpoints live under `/api` and speak JSON. Errors always look like
+`{ "error": { "code": "...", "message": "...", "details": [...] } }`.
+
+Sign-in sets an httpOnly, `SameSite=Strict` session cookie (8 hours); the token is never exposed to
+JavaScript and only its HMAC is stored. Sign-in is rate-limited per IP.
+
+| Area      | Endpoints                                                                                                | Who                                 |
+| --------- | -------------------------------------------------------------------------------------------------------- | ----------------------------------- |
+| Auth      | `POST /auth/login`, `POST /auth/logout`, `GET /auth/me`                                                  | Anyone                              |
+| Users     | `GET POST /users`, `PATCH DELETE /users/:id`, `GET /users/utilization`                                   | Admin                               |
+| Contacts  | `GET /contacts?type=&q=`                                                                                 | Admin                               |
+| Orders    | `GET /orders`, `GET /orders/:id`, `POST /orders/:id/advance`                                             | Admin; employees for their own work |
+| Orders    | `POST /orders`, `POST /orders/:id/assign`, `DELETE /orders/:id`                                          | Admin                               |
+| Purchases | `GET POST /purchases`, `GET /purchases/:id`, `POST /purchases/:id/receive`, `POST /purchases/:id/cancel` | Admin                               |
+| Inventory | `GET /inventory`                                                                                         | Signed in                           |
+| Dashboard | `GET /dashboard`                                                                                         | Admin                               |
+
+How the press works in the API:
+
+- **Stages.** An order moves Not started, Design, Montage, Printing, Cutting, Packaging, In transit,
+  Completed, one step at a time. Each stage belongs to a department; only that department (or an
+  admin) can move it on, and it can only be assigned to someone in that department. Every move is
+  recorded in the order's history.
+- **Employees** see orders assigned to them plus orders waiting in their department's stage.
+- **Stock.** Purchases are counted in packs; receiving them adds `packs × pack size` to stock (paper
+  in metres, ink and varnish in millilitres). Moving an order into printing takes its paper out of
+  stock and is refused when there is not enough.
+- **Utilization** is the estimated time of an employee's open work in their own stage, as a share of
+  one 8-hour day. Over 100% means overloaded.
+
+## Testing
+
+`pnpm test` needs Postgres. API tests run against a separate `<database>_test` database derived from
+`DATABASE_URL`, migrate it automatically, and empty it before each test, so development data is never
+touched.
 
 ## Production
 

@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import request from "supertest";
 import { describe, expect, it } from "vitest";
-import { createApp } from "../src/app";
+import { testApp } from "./helpers/setup";
 
 const healthy = async () => {};
 const unreachable = async () => {
@@ -12,20 +12,20 @@ const unreachable = async () => {
 
 describe("GET /api/health", () => {
   it("reports ok when the database answers", async () => {
-    const res = await request(createApp({ checkDatabase: healthy })).get("/api/health");
+    const res = await request(testApp({ checkDatabase: healthy })).get("/api/health");
     expect(res.status).toBe(200);
     expect(res.body).toEqual({ status: "ok", database: "ok" });
   });
 
   it("returns 503 when the database is unreachable", async () => {
-    const res = await request(createApp({ checkDatabase: unreachable })).get("/api/health");
+    const res = await request(testApp({ checkDatabase: unreachable })).get("/api/health");
     expect(res.status).toBe(503);
     expect(res.body.database).toBe("unreachable");
   });
 });
 
 describe("errors", () => {
-  const app = createApp({ checkDatabase: healthy });
+  const app = testApp({ checkDatabase: healthy });
 
   it("answers unknown API routes with a JSON 404", async () => {
     const res = await request(app).get("/api/nope");
@@ -52,7 +52,7 @@ describe("errors", () => {
 describe("serving the web app", () => {
   const webDist = mkdtempSync(path.join(tmpdir(), "robustify-web-"));
   writeFileSync(path.join(webDist, "index.html"), "<!doctype html><title>Robustify</title>");
-  const app = createApp({ checkDatabase: healthy, webDist });
+  const app = testApp({ checkDatabase: healthy, webDist });
 
   it("serves index.html for client-side routes", async () => {
     const res = await request(app).get("/orders/42").set("Accept", "text/html");
@@ -62,7 +62,7 @@ describe("serving the web app", () => {
 
   it("accepts a relative web directory", async () => {
     const relative = path.relative(process.cwd(), webDist);
-    const res = await request(createApp({ checkDatabase: healthy, webDist: relative }))
+    const res = await request(testApp({ checkDatabase: healthy, webDist: relative }))
       .get("/")
       .set("Accept", "text/html");
     expect(res.status).toBe(200);

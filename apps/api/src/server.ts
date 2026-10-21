@@ -1,10 +1,15 @@
-import { checkDatabase, prisma } from "./db";
 import { createApp } from "./app";
+import { prisma } from "./db";
 import { loadEnv } from "./env";
 import { logger } from "./logger";
 
 const env = loadEnv();
-const app = createApp({ checkDatabase, webDist: env.WEB_DIST });
+const app = createApp({
+  prisma,
+  sessionSecret: env.SESSION_SECRET,
+  secureCookies: env.NODE_ENV === "production",
+  webDist: env.WEB_DIST,
+});
 
 const server = app.listen(env.PORT, () => {
   logger.info({ port: env.PORT, env: env.NODE_ENV }, "robustify api listening");
