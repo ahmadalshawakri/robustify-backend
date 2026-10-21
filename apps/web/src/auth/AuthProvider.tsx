@@ -40,9 +40,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     signIn: async (input) => (await login.mutateAsync(input)).user,
     signOut: async () => {
       await api<void>("/auth/logout", { method: "POST" }).catch(() => {});
-      // Drop every cached response so the next user starts clean.
-      client.clear();
+      // Mark signed out first, so guarded pages unmount, then drop every other
+      // cached response so the next user starts clean. Clearing the whole cache
+      // instead would leave mounted observers watching removed queries.
       client.setQueryData(ME, null);
+      client.removeQueries({ predicate: (q) => q.queryKey[0] !== ME[0] });
     },
   };
 
