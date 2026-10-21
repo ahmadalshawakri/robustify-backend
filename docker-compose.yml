@@ -1,0 +1,19 @@
+# Local Postgres for development: `docker compose up -d db`
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: robustify
+      POSTGRES_PASSWORD: robustify
+      POSTGRES_DB: robustify
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U robustify"]
+      interval: 5s
+      retries: 10
+
+volumes:
+  pgdata:
