@@ -1,5 +1,8 @@
 import {
   AssignmentOutlined,
+  FeedbackOutlined,
+  InsightsOutlined,
+  PaymentsOutlined,
   DashboardOutlined,
   GroupsOutlined,
   Inventory2Outlined,
@@ -45,11 +48,15 @@ const ADMIN_NAV: NavItem[] = [
   { to: "/orders", label: "Orders", icon: <ReceiptLongOutlined /> },
   { to: "/purchases", label: "Purchases", icon: <LocalShippingOutlined /> },
   { to: "/inventory", label: "Stock", icon: <Inventory2Outlined /> },
+  { to: "/invoices", label: "Sales", icon: <PaymentsOutlined /> },
+  { to: "/complaints", label: "Complaints", icon: <FeedbackOutlined /> },
+  { to: "/quality", label: "Cost of quality", icon: <InsightsOutlined /> },
   { to: "/team", label: "Team", icon: <GroupsOutlined /> },
 ];
 
 const EMPLOYEE_NAV: NavItem[] = [
   { to: "/my-work", label: "My work", icon: <AssignmentOutlined /> },
+  { to: "/complaints", label: "Complaints", icon: <FeedbackOutlined /> },
   { to: "/inventory", label: "Stock", icon: <Inventory2Outlined /> },
 ];
 
@@ -125,7 +132,7 @@ export function AppShell({ onSignOut }: { onSignOut: () => Promise<void> }) {
           position="fixed"
           color="inherit"
           elevation={0}
-          sx={{ borderBottom: 1, borderColor: "divider" }}
+          sx={{ borderBottom: 1, borderColor: "divider", displayPrint: "none" }}
         >
           <Toolbar>
             <IconButton edge="start" onClick={() => setOpen(true)} aria-label="Open menu">
@@ -137,7 +144,10 @@ export function AppShell({ onSignOut }: { onSignOut: () => Promise<void> }) {
           </Toolbar>
         </AppBar>
       )}
-      <Box component="nav" sx={{ width: { md: DRAWER_WIDTH }, flexShrink: { md: 0 } }}>
+      <Box
+        component="nav"
+        sx={{ width: { md: DRAWER_WIDTH }, flexShrink: { md: 0 }, displayPrint: "none" }}
+      >
         <Drawer
           variant={desktop ? "permanent" : "temporary"}
           open={desktop || open}
@@ -156,6 +166,7 @@ export function AppShell({ onSignOut }: { onSignOut: () => Promise<void> }) {
           px: { xs: 2, sm: 3, lg: 4 },
           py: { xs: 3, md: 4 },
           mt: { xs: 7, md: 0 },
+          "@media print": { p: 0, mt: 0 },
         }}
       >
         <Outlet />

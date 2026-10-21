@@ -5,8 +5,7 @@ printing, cutting, packaging, delivery), each stage owned by its department. Mat
 from purchase to stock to press, and managers see utilization, the order queue, quality costs and
 invoices in one place.
 
-> **Status:** being rebuilt. The API and the new UI are in place; complaints, invoices and quality
-> costs come next. The original 2023 JavaScript version lives in this repository's history and in
+> **Status:** rebuilt; deployment comes next. The original 2023 JavaScript version lives in this repository's history and in
 > [Robustify-Frontend](https://github.com/ahmadalshawakri/Robustify-Frontend).
 
 ## Stack
@@ -57,16 +56,20 @@ All endpoints live under `/api` and speak JSON. Errors always look like
 Sign-in sets an httpOnly, `SameSite=Strict` session cookie (8 hours); the token is never exposed to
 JavaScript and only its HMAC is stored. Sign-in is rate-limited per IP.
 
-| Area      | Endpoints                                                                                                | Who                                 |
-| --------- | -------------------------------------------------------------------------------------------------------- | ----------------------------------- |
-| Auth      | `POST /auth/login`, `POST /auth/logout`, `GET /auth/me`                                                  | Anyone                              |
-| Users     | `GET POST /users`, `PATCH DELETE /users/:id`, `GET /users/utilization`                                   | Admin                               |
-| Contacts  | `GET /contacts?type=&q=`                                                                                 | Admin                               |
-| Orders    | `GET /orders`, `GET /orders/:id`, `POST /orders/:id/advance`                                             | Admin; employees for their own work |
-| Orders    | `POST /orders`, `POST /orders/:id/assign`, `DELETE /orders/:id`                                          | Admin                               |
-| Purchases | `GET POST /purchases`, `GET /purchases/:id`, `POST /purchases/:id/receive`, `POST /purchases/:id/cancel` | Admin                               |
-| Inventory | `GET /inventory`                                                                                         | Signed in                           |
-| Dashboard | `GET /dashboard`                                                                                         | Admin                               |
+| Area       | Endpoints                                                                                                | Who                                 |
+| ---------- | -------------------------------------------------------------------------------------------------------- | ----------------------------------- |
+| Auth       | `POST /auth/login`, `POST /auth/logout`, `GET /auth/me`                                                  | Anyone                              |
+| Users      | `GET POST /users`, `PATCH DELETE /users/:id`, `GET /users/utilization`                                   | Admin                               |
+| Contacts   | `GET /contacts?type=&q=`                                                                                 | Admin                               |
+| Orders     | `GET /orders`, `GET /orders/:id`, `POST /orders/:id/advance`                                             | Admin; employees for their own work |
+| Orders     | `POST /orders`, `POST /orders/:id/assign`, `DELETE /orders/:id`                                          | Admin                               |
+| Purchases  | `GET POST /purchases`, `GET /purchases/:id`, `POST /purchases/:id/receive`, `POST /purchases/:id/cancel` | Admin                               |
+| Inventory  | `GET /inventory`                                                                                         | Signed in                           |
+| Complaints | `GET /complaints`                                                                                        | Admin; employees see their own      |
+| Complaints | `POST /complaints`, `PATCH /complaints/:id`                                                              | Admin                               |
+| Invoices   | `GET POST /invoices`, `GET /invoices/:id`, `GET /invoices/sales-report?months=`                          | Admin                               |
+| Quality    | `GET POST /quality-costs?months=`, `DELETE /quality-costs/:id`                                           | Admin                               |
+| Dashboard  | `GET /dashboard`                                                                                         | Admin                               |
 
 How the press works in the API:
 
@@ -78,6 +81,12 @@ How the press works in the API:
 - **Stock.** Purchases are counted in packs; receiving them adds `packs × pack size` to stock (paper
   in metres, ink and varnish in millilitres). Moving an order into printing takes its paper out of
   stock and is refused when there is not enough.
+- **After delivery.** Complaints can be logged once an order has shipped, with who was responsible
+  and what putting it right cost. Completed orders are invoiced once each, numbered
+  `INV-<year>-<seq>`, with 16% tax; the sales report sums revenue by month and ranks customers.
+- **Cost of quality** compares money spent preventing defects (maintenance, training, equipment,
+  inspection) with money lost to them (defects, rework, lost customers, and complaint costs), per
+  month. The share spent on poor quality is the number to push down.
 - **Utilization** is the estimated time of an employee's open work in their own stage, as a share of
   one 8-hour day. Over 100% means overloaded.
 
@@ -85,8 +94,9 @@ How the press works in the API:
 
 Admins get a dashboard (queue by stage, overdue orders, low stock, team utilization), orders with a
 stage-by-stage detail page, purchases with partial receipts, stock and a team page to manage
-accounts. Employees land on **My work**: what is assigned to them and what is waiting in their
-stage, with one button to move an order on. Forms validate with the same zod schemas as the API,
+accounts, plus sales with printable invoices, complaints, and cost of quality. Employees land on
+**My work**: what is assigned to them and what is waiting in their stage, with one button to move
+an order on, and they see the complaints they are responsible for. Forms validate with the same zod schemas as the API,
 and the layout works down to phone width.
 
 ## Testing

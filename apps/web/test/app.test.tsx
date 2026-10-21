@@ -68,3 +68,30 @@ describe("sign in", () => {
     await waitFor(() => expect(router.state.location.pathname).toBe("/my-work"));
   });
 });
+
+describe("complaints", () => {
+  const complaint = {
+    id: 1,
+    defect: "Colour mismatch",
+    comment: null,
+    cost: 80,
+    status: "OPEN",
+    createdAt: "2026-10-01T10:00:00Z",
+    resolvedAt: null,
+    order: { id: 42, status: "COMPLETED", paperType: "LASER", quantity: 100 },
+    customer: { id: 1, name: "Al Noor Bakery" },
+    responsible: { id: 5, username: "yousef.ali", department: "PRINTING" },
+  };
+
+  it("are read-only for employees", async () => {
+    mockApi({
+      "GET /api/auth/me": () => ({ status: 200, body: { user: printer } }),
+      "GET /api/complaints": () => ({ status: 200, body: { complaints: [complaint] } }),
+    });
+    renderApp("/complaints");
+
+    expect(await screen.findByText("Colour mismatch")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Resolve" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Sales" })).not.toBeInTheDocument();
+  });
+});

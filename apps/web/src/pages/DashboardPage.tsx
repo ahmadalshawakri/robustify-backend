@@ -14,7 +14,7 @@ import { useDashboard } from "../api/hooks";
 import { PageHeader } from "../components/PageHeader";
 import { QueryState } from "../components/QueryState";
 import { StatCard } from "../components/StatCard";
-import { formatNumber } from "../lib/format";
+import { formatMoney, formatNumber } from "../lib/format";
 import { UtilizationTable } from "./team/UtilizationTable";
 
 export function DashboardPage() {
@@ -36,14 +36,14 @@ export function DashboardPage() {
           }));
           return (
             <Grid container spacing={2}>
-              <Grid size={{ xs: 6, lg: 3 }}>
+              <Grid size={{ xs: 6, md: 4, xl: 2 }}>
                 <StatCard
                   label="In production"
                   value={inProduction}
                   hint={`${data.ordersByStatus.NOT_STARTED} waiting to start`}
                 />
               </Grid>
-              <Grid size={{ xs: 6, lg: 3 }}>
+              <Grid size={{ xs: 6, md: 4, xl: 2 }}>
                 <StatCard
                   label="Overdue"
                   value={data.overdueOrders}
@@ -51,14 +51,33 @@ export function DashboardPage() {
                   hint="past deadline, not completed"
                 />
               </Grid>
-              <Grid size={{ xs: 6, lg: 3 }}>
+              <Grid size={{ xs: 6, md: 4, xl: 2 }}>
                 <StatCard
                   label="Average utilization"
                   value={`${data.averageUtilization}%`}
                   hint="of a working day, per employee"
                 />
               </Grid>
-              <Grid size={{ xs: 6, lg: 3 }}>
+              <Grid size={{ xs: 6, md: 4, xl: 2 }}>
+                <StatCard
+                  label="Revenue this month"
+                  value={formatMoney(data.revenueThisMonth)}
+                  hint={
+                    data.uninvoicedOrders
+                      ? `${data.uninvoicedOrders} completed order${data.uninvoicedOrders === 1 ? "" : "s"} to invoice`
+                      : "everything completed is invoiced"
+                  }
+                />
+              </Grid>
+              <Grid size={{ xs: 6, md: 4, xl: 2 }}>
+                <StatCard
+                  label="Open complaints"
+                  value={data.openComplaints}
+                  tone={data.openComplaints ? "warning" : undefined}
+                  hint="waiting to be resolved"
+                />
+              </Grid>
+              <Grid size={{ xs: 6, md: 4, xl: 2 }}>
                 <StatCard
                   label="Open purchases"
                   value={data.openPurchases}

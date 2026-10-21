@@ -6,6 +6,7 @@ import {
   MATERIAL_CATEGORIES,
   ORDER_STATUSES,
   PURCHASE_STATUSES,
+  QUALITY_COST_CATEGORIES,
   ROLES,
 } from "@robustify/shared";
 import { describe, expect, it } from "vitest";
@@ -20,6 +21,7 @@ describe("Prisma enums match @robustify/shared", () => {
     ["PurchaseStatus", $Enums.PurchaseStatus, PURCHASE_STATUSES],
     ["ComplaintStatus", $Enums.ComplaintStatus, COMPLAINT_STATUSES],
     ["MaterialCategory", $Enums.MaterialCategory, MATERIAL_CATEGORIES],
+    ["QualityCostCategory", $Enums.QualityCostCategory, QUALITY_COST_CATEGORIES],
   ])("%s", (_name, prismaEnum, shared) => {
     expect(Object.values(prismaEnum)).toEqual([...shared]);
   });

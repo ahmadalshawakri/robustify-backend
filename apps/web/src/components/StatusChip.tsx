@@ -1,5 +1,10 @@
 import { Chip, type ChipProps } from "@mui/material";
-import { LABELS, type OrderStatus, type PurchaseStatus } from "@robustify/shared";
+import {
+  type ComplaintStatus,
+  LABELS,
+  type OrderStatus,
+  type PurchaseStatus,
+} from "@robustify/shared";
 
 const ORDER_COLORS: Record<OrderStatus, ChipProps["color"]> = {
   NOT_STARTED: "default",
@@ -42,6 +47,17 @@ export function PurchaseStatusChip({ status }: { status: PurchaseStatus }) {
       size="small"
       color={PURCHASE_COLORS[status]}
       label={LABELS.purchaseStatus[status]}
+      variant="outlined"
+    />
+  );
+}
+
+export function ComplaintStatusChip({ status }: { status: ComplaintStatus }) {
+  return (
+    <Chip
+      size="small"
+      color={status === "OPEN" ? "warning" : "success"}
+      label={LABELS.complaintStatus[status]}
       variant="outlined"
     />
   );

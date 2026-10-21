@@ -7,8 +7,13 @@ import { PrismaClient, type OrderStatus } from "@prisma/client";
 import {
   MATERIALS,
   PAPER_TYPES,
+  QUALITY_COST_CATEGORIES,
+  QUALITY_KIND,
   STAGE_OWNER,
+  invoiceTotals,
   nextStatus,
+  recentMonths,
+  suggestedPrice,
   type MaterialCategory,
 } from "@robustify/shared";
 import bcrypt from "bcryptjs";
@@ -75,6 +80,7 @@ const slug = (name: string) => name.toLowerCase().replace(/[^a-z]+/g, "");
 async function wipe() {
   // Children first, so foreign keys never block a delete.
   await prisma.session.deleteMany();
+  await prisma.qualityCost.deleteMany();
   await prisma.invoice.deleteMany();
   await prisma.complaint.deleteMany();
   await prisma.orderEvent.deleteMany();
@@ -117,7 +123,7 @@ async function main() {
 
   // Orders spread across the pipeline, oldest furthest along.
   const pipeline: OrderStatus[] = [
-    ...Array<OrderStatus>(6).fill("COMPLETED"),
+    ...Array<OrderStatus>(16).fill("COMPLETED"),
     ...Array<OrderStatus>(2).fill("IN_TRANSIT"),
     ...Array<OrderStatus>(2).fill("PACKAGING"),
     ...Array<OrderStatus>(3).fill("CUTTING"),
@@ -129,7 +135,11 @@ async function main() {
 
   const orders = [];
   for (const [index, finalStatus] of pipeline.entries()) {
-    const createdAt = daysFromToday(-(pipeline.length - index) * 2 - between(0, 2));
+    // Finished work is spread over the last six months; open work is recent.
+    const createdAt =
+      finalStatus === "COMPLETED"
+        ? daysFromToday(-172 + index * 11 + between(0, 2))
+        : daysFromToday(-(pipeline.length - index) * 2 - between(0, 2));
     const quantity = between(5, 60) * 100;
     const owner = STAGE_OWNER[finalStatus];
     const assignee = owner ? pick(inDepartment(owner)) : null;
@@ -167,31 +177,48 @@ async function main() {
     orders.push(order);
   }
 
-  // Invoices for completed work, 16% tax.
+  // Invoices for completed work, numbered in issue order. Two are left for the demo to invoice.
   const completed = orders.filter((o) => o.status === "COMPLETED");
-  for (const [index, order] of completed.entries()) {
-    const subtotal = Math.round(Number(order.cost) * 1.45 * 100) / 100;
-    const tax = Math.round(subtotal * 0.16 * 100) / 100;
+  const uninvoiced = new Set([completed.at(9)?.id, completed.at(-1)?.id]);
+  const invoiced = completed.filter((o) => !uninvoiced.has(o.id));
+  const sequence = new Map<number, number>();
+  for (const order of invoiced) {
+    const issuedAt = new Date(Math.min(order.createdAt.getTime() + 6 * DAY, Date.now()));
+    const year = issuedAt.getUTCFullYear();
+    const seq = (sequence.get(year) ?? 0) + 1;
+    sequence.set(year, seq);
     await prisma.invoice.create({
       data: {
-        number: `INV-${today.getFullYear()}-${String(index + 1).padStart(4, "0")}`,
+        number: `INV-${year}-${String(seq).padStart(4, "0")}`,
         orderId: order.id,
-        subtotal,
-        tax,
-        total: subtotal + tax,
-        issuedAt: new Date(Math.min(order.createdAt.getTime() + 6 * DAY, Date.now())),
+        ...invoiceTotals(suggestedPrice(Number(order.cost))),
+        issuedAt,
       },
     });
   }
 
   // Complaints against a couple of delivered orders.
   const complaints = [
-    { defect: "Colour mismatch on cyan", department: "PRINTING", comment: "Reprint agreed." },
-    { defect: "Labels cut 2 mm off centre", department: "CUTTING", comment: null },
+    {
+      defect: "Colour mismatch on cyan",
+      department: "PRINTING",
+      comment: "Reprint agreed.",
+      cost: 240,
+    },
+    { defect: "Labels cut 2 mm off centre", department: "CUTTING", comment: null, cost: null },
+    {
+      defect: "Wrong varnish (matte, not gloss)",
+      department: "PRINTING",
+      comment: "Credit note issued.",
+      cost: 180,
+    },
+    { defect: "Boxes crushed in delivery", department: "DELIVERY", comment: null, cost: 95 },
   ];
   for (const [index, complaint] of complaints.entries()) {
-    const order = completed.at(index);
+    const order = completed.at(-1 - index * 3);
     if (!order) break;
+    const createdAt = new Date(Math.min(order.createdAt.getTime() + 9 * DAY, Date.now()));
+    const resolved = index % 2 === 0;
     await prisma.complaint.create({
       data: {
         orderId: order.id,
@@ -199,7 +226,10 @@ async function main() {
         responsibleId: pick(inDepartment(complaint.department)).id,
         defect: complaint.defect,
         comment: complaint.comment,
-        status: index === 0 ? "RESOLVED" : "OPEN",
+        cost: complaint.cost,
+        status: resolved ? "RESOLVED" : "OPEN",
+        resolvedAt: resolved ? new Date(Math.min(createdAt.getTime() + 3 * DAY, Date.now())) : null,
+        createdAt,
       },
     });
   }
@@ -260,9 +290,26 @@ async function main() {
     }
   }
 
+  // Cost of quality: steady prevention spending, with poor quality shrinking as it pays off.
+  const months = recentMonths(6);
+  for (const [index, month] of months.entries()) {
+    for (const category of QUALITY_COST_CATEGORIES) {
+      if (random() < 0.35) continue;
+      const base = QUALITY_KIND[category] === "GOOD" ? between(150, 600) : between(80, 500);
+      const trend = QUALITY_KIND[category] === "POOR" ? 1.4 - index * 0.15 : 1;
+      await prisma.qualityCost.create({
+        data: {
+          month: new Date(`${month}-01T00:00:00Z`),
+          category,
+          amount: Math.round(base * trend),
+        },
+      });
+    }
+  }
+
   console.log(
     `Seeded ${users.length} users, ${customers.length + suppliers.length} contacts, ` +
-      `${orders.length} orders, ${completed.length} invoices, ${purchasePlan.length} purchases.`,
+      `${orders.length} orders, ${invoiced.length} invoices, ${purchasePlan.length} purchases.`,
   );
 }
 

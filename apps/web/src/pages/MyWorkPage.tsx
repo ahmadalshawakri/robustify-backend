@@ -1,6 +1,8 @@
-import { Card, CardContent, Typography } from "@mui/material";
-import { LABELS } from "@robustify/shared";
-import { useOrders } from "../api/hooks";
+import { ArrowForward } from "@mui/icons-material";
+import { Button, Card, CardContent, Typography } from "@mui/material";
+import { LABELS, nextStatus } from "@robustify/shared";
+import { useAdvanceOrder, useOrders } from "../api/hooks";
+import type { OrderSummary } from "../api/types";
 import { useUser } from "../auth/AuthProvider";
 import { PageHeader } from "../components/PageHeader";
 import { QueryState } from "../components/QueryState";
@@ -17,7 +19,7 @@ export function MyWorkPage() {
     <>
       <PageHeader
         title={`Hello, ${displayName(user.username).split(" ")[0]}`}
-        subtitle={`Orders in ${department}. Open one to move it to the next stage.`}
+        subtitle={`Orders in ${department}. Move them on when your part is done.`}
       />
       <QueryState query={orders}>
         {(all) => {
@@ -28,18 +30,46 @@ export function MyWorkPage() {
           return (
             <>
               <Section title="Assigned to me" empty="Nothing assigned to you right now.">
-                {mine.length > 0 && <OrdersTable orders={mine} />}
+                {mine.length > 0 && <OrdersTable orders={mine} action={quickAdvance} />}
               </Section>
               <Section
                 title={`Waiting in ${department}`}
                 empty={`No other orders waiting in ${department}.`}
               >
-                {queue.length > 0 && <OrdersTable orders={queue} />}
+                {queue.length > 0 && <OrdersTable orders={queue} action={quickAdvance} />}
               </Section>
             </>
           );
         }}
       </QueryState>
+    </>
+  );
+}
+
+const quickAdvance = (order: OrderSummary) => <AdvanceButton order={order} />;
+
+function AdvanceButton({ order }: { order: OrderSummary }) {
+  const user = useUser();
+  const advance = useAdvanceOrder(order.id);
+  const next = nextStatus(order.status);
+  if (!next || order.stageOwner !== user.department) return null;
+  return (
+    <>
+      <Button
+        size="small"
+        variant="outlined"
+        endIcon={<ArrowForward />}
+        disabled={advance.isPending}
+        onClick={() => advance.mutate(undefined)}
+        sx={{ whiteSpace: "nowrap" }}
+      >
+        {LABELS.orderStatus[next]}
+      </Button>
+      {advance.isError && (
+        <Typography variant="caption" color="error" component="div" sx={{ maxWidth: 240, mt: 0.5 }}>
+          {advance.error.message}
+        </Typography>
+      )}
     </>
   );
 }

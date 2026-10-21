@@ -4,7 +4,13 @@ import {
   Button,
   Card,
   CardContent,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Divider,
   Grid,
+  Link,
   List,
   ListItem,
   ListItemText,
@@ -13,12 +19,21 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { LABELS, STAGE_OWNER, nextStatus } from "@robustify/shared";
+import {
+  DEFAULT_MARKUP,
+  LABELS,
+  STAGE_OWNER,
+  TAX_RATE,
+  invoiceTotals,
+  nextStatus,
+  suggestedPrice,
+} from "@robustify/shared";
 import { useState } from "react";
 import { Link as RouterLink, useNavigate, useParams } from "react-router";
 import {
   useAdvanceOrder,
   useAssignOrder,
+  useCreateInvoice,
   useDeleteOrder,
   useOrder,
   useUsers,
@@ -28,7 +43,7 @@ import { useUser } from "../../auth/AuthProvider";
 import { PageHeader } from "../../components/PageHeader";
 import { QueryState } from "../../components/QueryState";
 import { StageStepper } from "../../components/StageStepper";
-import { OrderStatusChip } from "../../components/StatusChip";
+import { ComplaintStatusChip, OrderStatusChip } from "../../components/StatusChip";
 import {
   displayName,
   formatDate,
@@ -37,6 +52,7 @@ import {
   formatNumber,
   isOverdue,
 } from "../../lib/format";
+import { ComplaintDialog } from "../complaints/ComplaintDialog";
 
 export function OrderDetailPage() {
   const id = Number(useParams().id);
@@ -135,8 +151,14 @@ function OrderDetail({ order }: { order: OrderDetail }) {
             </Card>
           </Stack>
         </Grid>
-        <Grid size={{ xs: 12, md: 5 }}>
-          <OrderActions order={order} />
+        {/* On phones the actions come first: that is what people open the page for. */}
+        <Grid size={{ xs: 12, md: 5 }} sx={{ order: { xs: -1, md: 0 } }}>
+          <Stack spacing={2}>
+            <OrderActions order={order} />
+            {(order.status === "IN_TRANSIT" || order.status === "COMPLETED") && (
+              <AfterSales order={order} />
+            )}
+          </Stack>
         </Grid>
       </Grid>
     </>
@@ -264,12 +286,6 @@ function OrderActions({ order }: { order: OrderDetail }) {
 
           {!next && <Alert severity="success">This order is completed.</Alert>}
 
-          {order.invoice && (
-            <Typography>
-              Invoice {order.invoice.number}: {formatMoney(order.invoice.total)}
-            </Typography>
-          )}
-
           {admin && order.status === "NOT_STARTED" && (
             <Button
               color="error"
@@ -295,5 +311,118 @@ function OrderActions({ order }: { order: OrderDetail }) {
         </Stack>
       </CardContent>
     </Card>
+  );
+}
+
+/** Invoice and complaints, once an order has shipped. */
+function AfterSales({ order }: { order: OrderDetail }) {
+  const admin = useUser().role === "ADMIN";
+  const [dialog, setDialog] = useState<"invoice" | "complaint" | null>(null);
+
+  return (
+    <Card variant="outlined">
+      <CardContent>
+        <Stack spacing={2}>
+          <Typography variant="h6" component="h2">
+            After delivery
+          </Typography>
+          {order.invoice ? (
+            <Typography>
+              Invoiced as{" "}
+              {admin ? (
+                <Link component={RouterLink} to={`/invoices/${order.invoice.id}`} fontWeight={600}>
+                  {order.invoice.number}
+                </Link>
+              ) : (
+                order.invoice.number
+              )}{" "}
+              for {formatMoney(order.invoice.total)} on {formatDate(order.invoice.issuedAt)}.
+            </Typography>
+          ) : order.status === "COMPLETED" ? (
+            <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between">
+              <Typography color="text.secondary">Not invoiced yet.</Typography>
+              {admin && (
+                <Button variant="outlined" onClick={() => setDialog("invoice")}>
+                  Create invoice
+                </Button>
+              )}
+            </Stack>
+          ) : null}
+
+          <Divider />
+          <Stack direction="row" alignItems="center" justifyContent="space-between">
+            <Typography fontWeight={600}>Complaints</Typography>
+            {admin && (
+              <Button size="small" onClick={() => setDialog("complaint")}>
+                Log complaint
+              </Button>
+            )}
+          </Stack>
+          {order.complaints.length === 0 ? (
+            <Typography color="text.secondary">None.</Typography>
+          ) : (
+            <List dense disablePadding>
+              {order.complaints.map((c) => (
+                <ListItem
+                  key={c.id}
+                  disableGutters
+                  secondaryAction={<ComplaintStatusChip status={c.status} />}
+                >
+                  <ListItemText primary={c.defect} secondary={formatDate(c.createdAt)} />
+                </ListItem>
+              ))}
+            </List>
+          )}
+        </Stack>
+      </CardContent>
+      {dialog === "invoice" && <InvoiceDialog order={order} onClose={() => setDialog(null)} />}
+      {dialog === "complaint" && (
+        <ComplaintDialog orderId={order.id} onClose={() => setDialog(null)} />
+      )}
+    </Card>
+  );
+}
+
+function InvoiceDialog({ order, onClose }: { order: OrderDetail; onClose: () => void }) {
+  const create = useCreateInvoice();
+  const [price, setPrice] = useState(String(suggestedPrice(order.cost)));
+  const value = Number(price);
+  const valid = price !== "" && value > 0;
+  const totals = invoiceTotals(valid ? value : 0);
+
+  return (
+    <Dialog open onClose={onClose} fullWidth maxWidth="xs">
+      <DialogTitle>Invoice order #{order.id}</DialogTitle>
+      <DialogContent>
+        <Stack spacing={2} sx={{ pt: 1 }}>
+          {create.isError && <Alert severity="error">{create.error.message}</Alert>}
+          <TextField
+            autoFocus
+            type="number"
+            label="Price before tax"
+            value={price}
+            onChange={(e) => setPrice(e.target.value)}
+            error={!valid}
+            helperText={`Suggested from material cost ${formatMoney(order.cost)} × ${DEFAULT_MARKUP}`}
+          />
+          <Typography color="text.secondary">
+            Tax {Math.round(TAX_RATE * 100)}%: {formatMoney(totals.tax)} · Total{" "}
+            <strong>{formatMoney(totals.total)}</strong>
+          </Typography>
+        </Stack>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={onClose}>Cancel</Button>
+        <Button
+          variant="contained"
+          disabled={!valid || create.isPending}
+          onClick={() =>
+            create.mutate({ orderId: order.id, subtotal: value }, { onSuccess: onClose })
+          }
+        >
+          Issue invoice
+        </Button>
+      </DialogActions>
+    </Dialog>
   );
 }
