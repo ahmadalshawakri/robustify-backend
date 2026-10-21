@@ -158,3 +158,8 @@ export interface QualityReport {
   totals: { good: number; poor: number; poorRatio: number };
   entries: QualityEntry[];
 }
+
+export interface DemoInfo {
+  enabled: boolean;
+  accounts: { username: string; label: string; description: string }[];
+}

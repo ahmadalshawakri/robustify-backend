@@ -1,0 +1,19 @@
+# Render Blueprint: one Docker web service on the free plan.
+# The database lives on Neon; paste its connection string when Render asks for DATABASE_URL.
+services:
+  - type: web
+    name: robustify
+    runtime: docker
+    plan: free
+    region: frankfurt
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: SEED_PASSWORD
+        generateValue: true
+      - key: DEMO_MODE
+        value: "true"

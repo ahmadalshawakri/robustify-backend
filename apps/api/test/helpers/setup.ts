@@ -13,6 +13,7 @@ export function testApp(overrides: Partial<AppDeps> = {}) {
     prisma,
     sessionSecret: "test-secret-that-is-at-least-32-characters",
     secureCookies: false,
+    demo: false,
     loginAttempts: 1000,
     ...overrides,
   });

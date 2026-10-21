@@ -18,6 +18,7 @@ import { api, query } from "./client";
 import type {
   Complaint,
   Dashboard,
+  DemoInfo,
   EmployeeUtilization,
   InventoryItem,
   Invoice,
@@ -297,3 +298,10 @@ export function useDeleteQualityCost() {
     onSuccess: () => client.invalidateQueries({ queryKey: ["quality"] }),
   });
 }
+
+export const useDemoInfo = () =>
+  useQuery({
+    queryKey: ["demo"],
+    queryFn: () => api<DemoInfo>("/auth/demo"),
+    staleTime: Infinity,
+  });

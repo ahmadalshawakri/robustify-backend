@@ -10,6 +10,7 @@ COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
 COPY apps/api/package.json apps/api/
 COPY apps/web/package.json apps/web/
 COPY packages/shared/package.json packages/shared/
+COPY e2e/package.json e2e/
 RUN pnpm install --frozen-lockfile
 COPY . .
 RUN pnpm --filter @robustify/api db:generate && pnpm build

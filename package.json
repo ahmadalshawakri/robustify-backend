@@ -20,7 +20,8 @@
     "db:migrate": "pnpm --filter @robustify/api db:migrate",
     "db:deploy": "pnpm --filter @robustify/api db:deploy",
     "db:seed": "pnpm --filter @robustify/api db:seed",
-    "db:reset": "pnpm --filter @robustify/api db:reset"
+    "db:reset": "pnpm --filter @robustify/api db:reset",
+    "e2e": "pnpm --filter @robustify/e2e e2e"
   },
   "devDependencies": {
     "@eslint/js": "9.39.5",

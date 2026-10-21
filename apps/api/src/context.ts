@@ -6,4 +6,6 @@ export interface Ctx {
   sessionSecret: string;
   /** Mark cookies Secure (production, behind HTTPS). */
   secureCookies: boolean;
+  /** Running as the public demo. */
+  demo: boolean;
 }

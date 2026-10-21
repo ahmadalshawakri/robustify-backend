@@ -1,8 +1,19 @@
-import { Alert, Box, Button, Card, CardContent, Stack, TextField, Typography } from "@mui/material";
+import {
+  Alert,
+  Box,
+  Button,
+  Card,
+  CardContent,
+  Divider,
+  Stack,
+  TextField,
+  Typography,
+} from "@mui/material";
 import { loginSchema } from "@robustify/shared";
 import { useState } from "react";
 import { Navigate, useNavigate, useSearchParams } from "react-router";
 import { ApiError } from "../api/client";
+import { useDemoInfo } from "../api/hooks";
 import { useAuth } from "../auth/AuthProvider";
 import { useZodForm } from "../lib/useZodForm";
 
@@ -12,7 +23,8 @@ function safeRedirect(from: string | null) {
 }
 
 export function LoginPage() {
-  const { user, signIn } = useAuth();
+  const { user, signIn, signInDemo } = useAuth();
+  const demo = useDemoInfo();
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const [error, setError] = useState<string | null>(null);
@@ -20,6 +32,19 @@ export function LoginPage() {
   const form = useZodForm(loginSchema, { username: "", password: "" });
 
   if (user) return <Navigate to={safeRedirect(params.get("from"))} replace />;
+
+  const tryDemo = async (username: string) => {
+    setError(null);
+    setSubmitting(true);
+    try {
+      await signInDemo(username);
+      navigate(safeRedirect(params.get("from")), { replace: true });
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Sign-in failed");
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   const onSubmit = form.handleSubmit(async (input) => {
     setError(null);
@@ -53,11 +78,42 @@ export function LoginPage() {
                 Sign in
               </Typography>
               {error && <Alert severity="error">{error}</Alert>}
+              {demo.data?.enabled && (
+                <>
+                  <Typography color="text.secondary">
+                    This is a public demo with made-up data, reset every night. Pick a role to look
+                    around:
+                  </Typography>
+                  <Stack spacing={1}>
+                    {demo.data.accounts.map((account) => (
+                      <Button
+                        key={account.username}
+                        variant="outlined"
+                        disabled={submitting}
+                        onClick={() => void tryDemo(account.username)}
+                        sx={{
+                          flexDirection: "column",
+                          alignItems: "flex-start",
+                          textTransform: "none",
+                          py: 1,
+                          px: 2,
+                        }}
+                      >
+                        <Typography fontWeight={700}>{account.label}</Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          {account.description}
+                        </Typography>
+                      </Button>
+                    ))}
+                  </Stack>
+                  <Divider>or sign in</Divider>
+                </>
+              )}
               <TextField
                 label="Username"
                 autoComplete="username"
                 placeholder="firstname.lastname"
-                autoFocus
+                autoFocus={!demo.data?.enabled}
                 {...form.field("username")}
               />
               <TextField
