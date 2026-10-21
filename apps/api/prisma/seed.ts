@@ -74,6 +74,7 @@ const slug = (name: string) => name.toLowerCase().replace(/[^a-z]+/g, "");
 
 async function wipe() {
   // Children first, so foreign keys never block a delete.
+  await prisma.session.deleteMany();
   await prisma.invoice.deleteMany();
   await prisma.complaint.deleteMany();
   await prisma.orderEvent.deleteMany();
@@ -245,14 +246,14 @@ async function main() {
     });
   }
 
-  // Stock for every material in the catalogue.
+  // Stock for every material in the catalogue, in the material's unit. A few run low.
   for (const [category, material] of Object.entries(MATERIALS)) {
     for (const materialType of Object.keys(material.types)) {
       await prisma.inventoryItem.create({
         data: {
           category: category as MaterialCategory,
           materialType,
-          quantity: between(0, 40),
+          quantity: Math.round((material.packSize * between(0, 60)) / 10),
           location: `Warehouse ${pick(["A", "B"])}, shelf ${between(1, 12)}`,
         },
       });

@@ -68,9 +68,23 @@ model User {
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
 
+  sessions          Session[]
   assignedOrders    Order[]     @relation("OrderAssignee")
   orderEvents       OrderEvent[]
   complaintsHandled Complaint[] @relation("ComplaintResponsible")
+}
+
+/// A signed-in browser. The cookie holds a random token; only its HMAC is stored.
+model Session {
+  id        Int      @id @default(autoincrement())
+  tokenHash String   @unique
+  userId    Int
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 /// A customer or a supplier. The same company can exist once per type.
@@ -139,6 +153,7 @@ model Purchase {
   category         MaterialCategory
   /// Key from MATERIALS[category].types
   materialType     String
+  /// Packs ordered and received so far
   quantity         Int
   quantityReceived Int              @default(0)
   cost             Decimal          @db.Decimal(12, 2)
@@ -154,7 +169,8 @@ model Purchase {
   @@index([status])
 }
 
-/// Current stock per material. Booking a purchase adds to it; production consumes it.
+/// Current stock per material, in the material's unit (see MATERIALS).
+/// Receiving a purchase adds to it; printing consumes paper.
 model InventoryItem {
   id           Int              @id @default(autoincrement())
   category     MaterialCategory
