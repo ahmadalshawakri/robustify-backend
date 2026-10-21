@@ -5,7 +5,8 @@ printing, cutting, packaging, delivery), each stage owned by its department. Mat
 from purchase to stock to press, and managers see utilization, the order queue, quality costs and
 invoices in one place.
 
-> **Status:** being rebuilt. The foundation and the API are in place; the new UI follows. The original 2023 JavaScript version lives in this repository's history and in
+> **Status:** being rebuilt. The API and the new UI are in place; complaints, invoices and quality
+> costs come next. The original 2023 JavaScript version lives in this repository's history and in
 > [Robustify-Frontend](https://github.com/ahmadalshawakri/Robustify-Frontend).
 
 ## Stack
@@ -80,11 +81,19 @@ How the press works in the API:
 - **Utilization** is the estimated time of an employee's open work in their own stage, as a share of
   one 8-hour day. Over 100% means overloaded.
 
+## The web app
+
+Admins get a dashboard (queue by stage, overdue orders, low stock, team utilization), orders with a
+stage-by-stage detail page, purchases with partial receipts, stock and a team page to manage
+accounts. Employees land on **My work**: what is assigned to them and what is waiting in their
+stage, with one button to move an order on. Forms validate with the same zod schemas as the API,
+and the layout works down to phone width.
+
 ## Testing
 
 `pnpm test` needs Postgres. API tests run against a separate `<database>_test` database derived from
 `DATABASE_URL`, migrate it automatically, and empty it before each test, so development data is never
-touched.
+touched. Web tests run in jsdom against a stubbed API and need nothing else.
 
 ## Production
 

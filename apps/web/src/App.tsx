@@ -1,49 +1,61 @@
-import { Box, Chip, Container, Stack, Typography } from "@mui/material";
-import { LABELS, ORDER_STATUSES } from "@robustify/shared";
-import { useQuery } from "@tanstack/react-query";
+import { RouterProvider, createBrowserRouter } from "react-router";
+import { useAuth } from "./auth/AuthProvider";
+import { HomeRedirect, RequireAuth, RequireRole } from "./auth/guards";
+import { AppShell } from "./layout/AppShell";
+import { InventoryPage } from "./pages/InventoryPage";
+import { LoginPage } from "./pages/LoginPage";
+import { MyWorkPage } from "./pages/MyWorkPage";
+import { NotFoundPage } from "./pages/NotFoundPage";
+import { NewOrderPage } from "./pages/orders/NewOrderPage";
+import { OrderDetailPage } from "./pages/orders/OrderDetailPage";
+import { OrdersPage } from "./pages/orders/OrdersPage";
+import { NewPurchasePage } from "./pages/purchases/NewPurchasePage";
+import { PurchasesPage } from "./pages/purchases/PurchasesPage";
+import { TeamPage } from "./pages/team/TeamPage";
 
-interface Health {
-  status: "ok" | "degraded";
-  database: "ok" | "unreachable";
+function Shell() {
+  const { signOut } = useAuth();
+  return <AppShell onSignOut={signOut} />;
 }
 
-async function fetchHealth(): Promise<Health> {
-  const res = await fetch("/api/health");
-  return (await res.json()) as Health;
-}
+export const routes = [
+  { path: "/login", element: <LoginPage /> },
+  {
+    element: <RequireAuth />,
+    children: [
+      {
+        element: <Shell />,
+        children: [
+          { index: true, element: <HomeRedirect /> },
+          {
+            element: <RequireRole role="ADMIN" />,
+            children: [
+              {
+                path: "dashboard",
+                // The charts library is the heaviest dependency; only admins need it.
+                lazy: async () => ({
+                  Component: (await import("./pages/DashboardPage")).DashboardPage,
+                }),
+              },
+              { path: "orders", element: <OrdersPage /> },
+              { path: "orders/new", element: <NewOrderPage /> },
+              { path: "purchases", element: <PurchasesPage /> },
+              { path: "purchases/new", element: <NewPurchasePage /> },
+              { path: "team", element: <TeamPage /> },
+            ],
+          },
+          { path: "orders/:id", element: <OrderDetailPage /> },
+          { path: "my-work", element: <MyWorkPage /> },
+          { path: "inventory", element: <InventoryPage /> },
+          { path: "*", element: <NotFoundPage /> },
+        ],
+      },
+    ],
+  },
+];
 
-// Placeholder until the app shell lands in phase 3.
+const router = createBrowserRouter(routes);
+
 export function App() {
-  const health = useQuery({ queryKey: ["health"], queryFn: fetchHealth });
-
-  const apiLabel = health.isPending
-    ? "Checking API…"
-    : health.isError
-      ? "API unreachable"
-      : health.data.status === "ok"
-        ? "API and database online"
-        : "Database unreachable";
-  const apiColor =
-    health.data?.status === "ok" ? "success" : health.isPending ? "default" : "error";
-
-  return (
-    <Container maxWidth="sm" sx={{ py: { xs: 6, sm: 10 } }}>
-      <Stack spacing={3} alignItems="flex-start">
-        <Box component="img" src="/logo.png" alt="" sx={{ width: 56, height: 56 }} />
-        <Typography variant="h3" component="h1" fontWeight={700}>
-          Robustify
-        </Typography>
-        <Typography color="text.secondary">
-          An ERP for printing presses: orders move from design to delivery, materials are tracked
-          from purchase to press, and managers see where the work is.
-        </Typography>
-        <Chip label={apiLabel} color={apiColor} variant="outlined" />
-        <Stack direction="row" flexWrap="wrap" gap={1} aria-label="Order stages">
-          {ORDER_STATUSES.map((status) => (
-            <Chip key={status} size="small" label={LABELS.orderStatus[status]} />
-          ))}
-        </Stack>
-      </Stack>
-    </Container>
-  );
+  return <RouterProvider router={router} />;
 }
