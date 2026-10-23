@@ -36,6 +36,18 @@ export type PurchaseStatus = (typeof PURCHASE_STATUSES)[number];
 export const COMPLAINT_STATUSES = ["OPEN", "RESOLVED"] as const;
 export type ComplaintStatus = (typeof COMPLAINT_STATUSES)[number];
 
+/** What money was spent on: preventing defects (good) or paying for them (poor). */
+export const QUALITY_COST_CATEGORIES = [
+  "MAINTENANCE",
+  "TRAINING",
+  "EQUIPMENT",
+  "INSPECTION",
+  "DEFECT",
+  "REWORK",
+  "LOST_CUSTOMER",
+] as const;
+export type QualityCostCategory = (typeof QUALITY_COST_CATEGORIES)[number];
+
 export const LABELS = {
   role: { ADMIN: "Admin", EMPLOYEE: "Employee" },
   department: {
@@ -65,6 +77,15 @@ export const LABELS = {
     CANCELED: "Canceled",
   },
   complaintStatus: { OPEN: "Open", RESOLVED: "Resolved" },
+  qualityCostCategory: {
+    MAINTENANCE: "Maintenance",
+    TRAINING: "Training",
+    EQUIPMENT: "New equipment",
+    INSPECTION: "Inspection",
+    DEFECT: "Defects and scrap",
+    REWORK: "Rework",
+    LOST_CUSTOMER: "Lost customer",
+  },
 } as const satisfies {
   role: Record<Role, string>;
   department: Record<Department, string>;
@@ -72,4 +93,5 @@ export const LABELS = {
   contactType: Record<ContactType, string>;
   purchaseStatus: Record<PurchaseStatus, string>;
   complaintStatus: Record<ComplaintStatus, string>;
+  qualityCostCategory: Record<QualityCostCategory, string>;
 };

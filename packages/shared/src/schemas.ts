@@ -1,6 +1,14 @@
 import { z } from "zod";
 import { MATERIAL_CATEGORIES, PAPER_TYPES, materialTypes } from "./catalog";
-import { CONTACT_TYPES, DEPARTMENTS, ORDER_STATUSES, PURCHASE_STATUSES, ROLES } from "./enums";
+import {
+  COMPLAINT_STATUSES,
+  CONTACT_TYPES,
+  DEPARTMENTS,
+  ORDER_STATUSES,
+  PURCHASE_STATUSES,
+  QUALITY_COST_CATEGORIES,
+  ROLES,
+} from "./enums";
 
 const id = z.coerce.number().int().positive();
 const money = z.coerce.number().nonnegative();
@@ -123,3 +131,54 @@ export const receivePurchaseSchema = z.object({
   quantity: positiveInt,
 });
 export type ReceivePurchaseInput = z.infer<typeof receivePurchaseSchema>;
+
+const optionalText = z
+  .string()
+  .trim()
+  .max(1000)
+  .transform((v) => (v === "" ? null : v))
+  .nullable();
+
+export const createComplaintSchema = z.object({
+  orderId: id,
+  defect: z.string().trim().min(1, "Describe the problem").max(200),
+  /** Employee whose stage caused it. */
+  responsibleId: id.nullable().optional(),
+  /** What fixing it cost (reprint, refund). Counts as poor quality. */
+  cost: money.nullable().optional(),
+  comment: optionalText.optional(),
+});
+export type CreateComplaintInput = z.infer<typeof createComplaintSchema>;
+
+export const updateComplaintSchema = z
+  .object({
+    status: z.enum(COMPLAINT_STATUSES),
+    responsibleId: id.nullable(),
+    cost: money.nullable(),
+    comment: optionalText,
+  })
+  .partial();
+export type UpdateComplaintInput = z.infer<typeof updateComplaintSchema>;
+
+export const listComplaintsQuerySchema = z.object({
+  status: z.enum(COMPLAINT_STATUSES).optional(),
+});
+
+export const createInvoiceSchema = z.object({
+  orderId: id,
+  /** Price before tax. */
+  subtotal: z.coerce.number().positive("Enter the price"),
+});
+export type CreateInvoiceInput = z.infer<typeof createInvoiceSchema>;
+
+const months = z.coerce.number().int().min(1).max(24).default(6);
+
+export const reportQuerySchema = z.object({ months });
+
+export const createQualityCostSchema = z.object({
+  month: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/, "Pick a month"),
+  category: z.enum(QUALITY_COST_CATEGORIES),
+  amount: z.coerce.number().positive("Enter an amount"),
+  note: optionalText.optional(),
+});
+export type CreateQualityCostInput = z.infer<typeof createQualityCostSchema>;

@@ -1,4 +1,4 @@
-import type { Department, Role } from "@prisma/client";
+import type { Department, OrderStatus, Role } from "@prisma/client";
 import request from "supertest";
 import { createApp, type AppDeps } from "../../src/app";
 import { prisma } from "../../src/db";
@@ -76,3 +76,14 @@ export const newOrder = {
   consumption: 500,
   cost: 240.5,
 };
+
+/** Creates an order directly in the given status, skipping the workflow. */
+export async function makeOrder(status: OrderStatus, cost = 100) {
+  const contact = await prisma.contact.upsert({
+    where: { email_type: { email: customer.email, type: "CUSTOMER" } },
+    create: { ...customer, type: "CUSTOMER" },
+    update: {},
+  });
+  const { customer: _customer, deadline: _deadline, ...order } = newOrder;
+  return prisma.order.create({ data: { ...order, cost, status, customerId: contact.id } });
+}

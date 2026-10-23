@@ -9,12 +9,15 @@ import { logger } from "./logger";
 import { authenticate } from "./middleware/auth";
 import { errorHandler, notFound } from "./middleware/error";
 import { authRouter } from "./modules/auth/routes";
+import { complaintsRouter } from "./modules/complaints/routes";
 import { contactsRouter } from "./modules/contacts/routes";
 import { dashboardRouter } from "./modules/dashboard/routes";
 import { healthRouter } from "./modules/health";
 import { inventoryRouter } from "./modules/inventory/routes";
+import { invoicesRouter } from "./modules/invoices/routes";
 import { ordersRouter } from "./modules/orders/routes";
 import { purchasesRouter } from "./modules/purchases/routes";
+import { qualityRouter } from "./modules/quality/routes";
 import { usersRouter } from "./modules/users/routes";
 
 export interface AppDeps extends Ctx {
@@ -47,6 +50,9 @@ export function createApp({ checkDatabase, webDist, loginAttempts = 10, ...ctx }
   api.use("/orders", ordersRouter(ctx));
   api.use("/purchases", purchasesRouter(ctx));
   api.use("/inventory", inventoryRouter(ctx));
+  api.use("/complaints", complaintsRouter(ctx));
+  api.use("/invoices", invoicesRouter(ctx));
+  api.use("/quality-costs", qualityRouter(ctx));
   api.use("/dashboard", dashboardRouter(ctx));
   api.use(notFound);
   app.use("/api", api);

@@ -34,3 +34,12 @@ export const displayName = (username: string) =>
     .split(".")
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join(" ");
+
+const monthFormat = new Intl.DateTimeFormat(undefined, {
+  month: "short",
+  year: "numeric",
+  timeZone: "UTC",
+});
+
+/** "2026-10" → "Oct 2026". */
+export const formatMonth = (key: string) => monthFormat.format(new Date(`${key}-01T00:00:00Z`));

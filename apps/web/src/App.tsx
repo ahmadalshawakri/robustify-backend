@@ -5,11 +5,13 @@ import { AppShell } from "./layout/AppShell";
 import { InventoryPage } from "./pages/InventoryPage";
 import { LoginPage } from "./pages/LoginPage";
 import { MyWorkPage } from "./pages/MyWorkPage";
+import { ComplaintsPage } from "./pages/complaints/ComplaintsPage";
 import { NotFoundPage } from "./pages/NotFoundPage";
 import { NewOrderPage } from "./pages/orders/NewOrderPage";
 import { OrderDetailPage } from "./pages/orders/OrderDetailPage";
 import { OrdersPage } from "./pages/orders/OrdersPage";
 import { NewPurchasePage } from "./pages/purchases/NewPurchasePage";
+import { InvoicePage } from "./pages/invoices/InvoicePage";
 import { PurchasesPage } from "./pages/purchases/PurchasesPage";
 import { TeamPage } from "./pages/team/TeamPage";
 
@@ -42,10 +44,24 @@ export const routes = [
               { path: "purchases", element: <PurchasesPage /> },
               { path: "purchases/new", element: <NewPurchasePage /> },
               { path: "team", element: <TeamPage /> },
+              {
+                path: "invoices",
+                lazy: async () => ({
+                  Component: (await import("./pages/invoices/InvoicesPage")).InvoicesPage,
+                }),
+              },
+              { path: "invoices/:id", element: <InvoicePage /> },
+              {
+                path: "quality",
+                lazy: async () => ({
+                  Component: (await import("./pages/quality/QualityPage")).QualityPage,
+                }),
+              },
             ],
           },
           { path: "orders/:id", element: <OrderDetailPage /> },
           { path: "my-work", element: <MyWorkPage /> },
+          { path: "complaints", element: <ComplaintsPage /> },
           { path: "inventory", element: <InventoryPage /> },
           { path: "*", element: <NotFoundPage /> },
         ],
