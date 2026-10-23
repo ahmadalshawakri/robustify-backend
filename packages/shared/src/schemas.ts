@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { MATERIAL_CATEGORIES, PAPER_TYPES, materialTypes } from "./catalog";
+import { DEMO_USERNAMES } from "./demo";
 import {
   COMPLAINT_STATUSES,
   CONTACT_TYPES,
@@ -22,6 +23,8 @@ export const loginSchema = z.object({
   password: z.string().min(1, "Password is required"),
 });
 export type LoginInput = z.infer<typeof loginSchema>;
+
+export const demoLoginSchema = z.object({ username: z.enum(DEMO_USERNAMES) });
 
 const username = z
   .string()

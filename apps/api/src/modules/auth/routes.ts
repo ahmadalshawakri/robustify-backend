@@ -1,4 +1,4 @@
-import { loginSchema } from "@robustify/shared";
+import { DEMO_ACCOUNTS, demoLoginSchema, loginSchema } from "@robustify/shared";
 import bcrypt from "bcryptjs";
 import { type CookieOptions, Router } from "express";
 import { rateLimit } from "express-rate-limit";
@@ -37,6 +37,32 @@ export function authRouter(ctx: Ctx, opts: { loginAttempts: number }) {
     const user = await ctx.prisma.user.findUnique({ where: { username } });
     const valid = await bcrypt.compare(password, user?.passwordHash ?? DUMMY_HASH);
     if (!user || !valid) throw HttpError.unauthorized("Wrong username or password");
+
+    const token = await createSession(ctx, user.id);
+    res.cookie(SESSION_COOKIE, token, { ...cookie, maxAge: SESSION_TTL_MS });
+    res.json({ user: toSessionUser(user) });
+  });
+
+  // One-click sign-in for the public demo. Off everywhere else.
+  router.get("/demo", (_req, res) => {
+    res.json({ enabled: ctx.demo, accounts: ctx.demo ? DEMO_ACCOUNTS : [] });
+  });
+
+  // Generous: demo sign-ins need no password, so there is nothing to guess.
+  const demoLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    limit: opts.loginAttempts * 10,
+    standardHeaders: "draft-7",
+    legacyHeaders: false,
+    handler: (_req, _res, next) =>
+      next(new HttpError(429, "Too many sign-ins. Try again in a few minutes.", "rate_limited")),
+  });
+
+  router.post("/demo", demoLimiter, async (req, res) => {
+    if (!ctx.demo) throw HttpError.notFound("No such endpoint");
+    const { username } = parse(demoLoginSchema, req.body);
+    const user = await ctx.prisma.user.findUnique({ where: { username } });
+    if (!user) throw HttpError.notFound("The demo is being reset. Try again in a minute.");
 
     const token = await createSession(ctx, user.id);
     res.cookie(SESSION_COOKIE, token, { ...cookie, maxAge: SESSION_TTL_MS });

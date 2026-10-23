@@ -8,6 +8,8 @@ interface Auth {
   user: User | null;
   loading: boolean;
   signIn: (input: LoginInput) => Promise<User>;
+  /** One-click sign-in on the public demo. */
+  signInDemo: (username: string) => Promise<User>;
   signOut: () => Promise<void>;
 }
 
@@ -34,10 +36,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     onSuccess: ({ user }) => client.setQueryData(ME, user),
   });
 
+  const demoLogin = useMutation({
+    mutationFn: (username: string) =>
+      api<{ user: User }>("/auth/demo", { method: "POST", body: { username } }),
+    onSuccess: ({ user }) => client.setQueryData(ME, user),
+  });
+
   const value: Auth = {
     user: me.data ?? null,
     loading: me.isPending,
     signIn: async (input) => (await login.mutateAsync(input)).user,
+    signInDemo: async (username) => (await demoLogin.mutateAsync(username)).user,
     signOut: async () => {
       await api<void>("/auth/logout", { method: "POST" }).catch(() => {});
       // Mark signed out first, so guarded pages unmount, then drop every other

@@ -5,8 +5,19 @@ printing, cutting, packaging, delivery), each stage owned by its department. Mat
 from purchase to stock to press, and managers see utilization, the order queue, quality costs and
 invoices in one place.
 
-> **Status:** rebuilt; deployment comes next. The original 2023 JavaScript version lives in this repository's history and in
-> [Robustify-Frontend](https://github.com/ahmadalshawakri/Robustify-Frontend).
+**Live demo:** _coming soon_ · one click signs you in as an admin, a designer or a printer; the
+data is made up and resets every night.
+
+![Dashboard](docs/screenshots/dashboard.png)
+
+Robustify started in 2023 as a JavaScript side project and was rebuilt in 2026 as a typed,
+tested monorepo. [The case study](docs/case-study.md) explains what changed and why. The original
+code lives in this repository's history and in
+[Robustify-Frontend](https://github.com/ahmadalshawakri/Robustify-Frontend).
+
+| Order detail                                | Sales                                | My work (phone)                                           |
+| ------------------------------------------- | ------------------------------------ | --------------------------------------------------------- |
+| ![Order detail](docs/screenshots/order.png) | ![Sales](docs/screenshots/sales.png) | ![My work on a phone](docs/screenshots/my-work-phone.png) |
 
 ## Stack
 
@@ -19,6 +30,22 @@ invoices in one place.
 
 The API and the web app share one set of validation schemas and constants, so a form and the
 endpoint behind it cannot disagree. In production a single container serves both, on one origin.
+
+```mermaid
+flowchart LR
+  browser["Browser<br/>React + MUI + TanStack Query"]
+  subgraph container["One Docker container (Render)"]
+    express["Express 5 API<br/>/api/*"]
+    static["Built web app<br/>everything else"]
+  end
+  shared["packages/shared<br/>zod schemas · workflow · catalogue"]
+  db[("PostgreSQL<br/>(Neon)")]
+  browser -- "JSON + session cookie" --> express
+  browser -- "HTML, JS" --> static
+  express -- Prisma --> db
+  shared -. "imported by" .-> browser
+  shared -. "imported by" .-> express
+```
 
 ## Getting started
 
@@ -105,6 +132,24 @@ and the layout works down to phone width.
 `DATABASE_URL`, migrate it automatically, and empty it before each test, so development data is never
 touched. Web tests run in jsdom against a stubbed API and need nothing else.
 
+`pnpm e2e` runs Playwright smoke tests (desktop and phone) against a running server in demo mode,
+which CI starts on every pull request.
+
+## Deploying
+
+The live demo runs on free tiers: [Render](https://render.com) for the container and
+[Neon](https://neon.tech) for Postgres.
+
+1. Create a Neon project and copy its **direct** (not pooled) connection string.
+2. In Render, choose **New → Blueprint**, pick this repository, and paste the connection string
+   when asked for `DATABASE_URL`. `render.yaml` generates the session secret and seed password and
+   turns on demo mode.
+3. On first start the container applies migrations and, in demo mode, seeds the demo press.
+
+In demo mode (`DEMO_MODE=true`) the sign-in page offers one-click demo accounts, the data is
+reseeded once a day, and the demo accounts' passwords, roles and existence are protected. Leave it
+off for a real press and run `pnpm db:seed` only if you want sample data.
+
 ## Production
 
 ```sh
@@ -114,7 +159,8 @@ docker run -p 3001:3001 -e DATABASE_URL=... -e SESSION_SECRET=... robustify
 
 The container applies pending migrations on start, then serves the API under `/api` and the web
 app everywhere else. `GET /api/health` checks the database. The app refuses to start when
-`DATABASE_URL` or a 32+ character `SESSION_SECRET` is missing.
+`DATABASE_URL` or a 32+ character `SESSION_SECRET` is missing, or when `DEMO_MODE` is on without a
+`SEED_PASSWORD`.
 
 ## Project layout
 
@@ -124,4 +170,6 @@ apps/
   web/        React single-page app
 packages/
   shared/     Code used by both apps
+e2e/          Playwright smoke tests
+docs/         Case study and screenshots
 ```

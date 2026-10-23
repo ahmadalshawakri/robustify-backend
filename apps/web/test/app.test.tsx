@@ -95,3 +95,35 @@ describe("complaints", () => {
     expect(screen.queryByRole("link", { name: "Sales" })).not.toBeInTheDocument();
   });
 });
+
+describe("public demo", () => {
+  it("offers one-click sign-in for each demo role", async () => {
+    let user: typeof printer | null = null;
+    const fetchMock = mockApi({
+      "GET /api/auth/me": () => (user ? { status: 200, body: { user } } : signedOut()),
+      "GET /api/auth/demo": () => ({
+        status: 200,
+        body: {
+          enabled: true,
+          accounts: [
+            { username: "yousef.ali", label: "Printer", description: "Works the printing stage" },
+          ],
+        },
+      }),
+      "POST /api/auth/demo": () => {
+        user = printer;
+        return { status: 200, body: { user } };
+      },
+      "GET /api/orders": () => ({ status: 200, body: { orders: [] } }),
+    });
+    const router = renderApp("/login");
+
+    await userEvent.click(await screen.findByRole("button", { name: /Printer/ }));
+
+    await waitFor(() => expect(router.state.location.pathname).toBe("/my-work"));
+    const demoCall = fetchMock.mock.calls.find(
+      ([url, init]) => String(url).endsWith("/auth/demo") && init?.method === "POST",
+    );
+    expect(JSON.parse(String(demoCall?.[1]?.body))).toEqual({ username: "yousef.ali" });
+  });
+});
